@@ -2,6 +2,7 @@
 //                                   INCLUDE HEADER FILES
 //===================================================================================================
 #include <stdio.h>
+#include <unistd.h>
 #include "altera_up_avalon_parallel_port.h"
 
 //===================================================================================================
@@ -15,6 +16,9 @@
 //===================================================================================================
 //                                   GLOBAL VARIABLES
 //===================================================================================================
+
+//GPIO
+alt_up_parallel_port_dev* gpio;
 unsigned int servo_position;
 unsigned int data_in;
 
@@ -43,11 +47,13 @@ int main()
 
 	  if(servo_position > 2) servo_position = 0;
 
-	  for(i=0; i<2; i++){
+	  for(i=0; i<4; i++){
 		  control_servo();
 	  }
 
 	  servo_position++;
+
+	  usleep(3000000);
   }
 
   return 0;
@@ -56,30 +62,20 @@ int main()
 //===================================================================================================
 //                                   FUNCTION IMPLEMENTATION
 //===================================================================================================
+
 void control_servo(void){
 
 	//OUTPUT = HIGH
 	alt_up_parallel_port_write_data(gpio, HIGH);
-	//Read from GPIO
-	data_in = alt_up_parallel_port_read_data(gpio);
-	//Print GPIO values
-	printf("GPIO @Pulse Start: %d\n",data_in);
 
 	//PULSE TIME
-	usleep(PULSE + 0.5 * servo_position);
+	usleep(PULSE + (PULSE/2) * servo_position);
 
 	//OUTPUT = LOW
 	alt_up_parallel_port_write_data(gpio, LOW);
-	//Read from GPIO
-	data_in = alt_up_parallel_port_read_data(gpio);
-	//Print GPIO values
-	printf("GPIO @Pulse Stop: %d\n",data_in);
 
 	//DELAY BETWEEN PULSE
 	usleep(PULSE_DELAY);
-	data_in = alt_up_parallel_port_read_data(gpio);
-	//Print GPIO values
-	printf("GPIO @Pulse Delay: %d\n",data_in);
 
 }
 
@@ -88,11 +84,9 @@ void control_servo(void){
 void init_hardware(void){
 
 	//Initialize GPIO
-	alt_up_parallel_port_dev* gpio;
 	gpio = alt_up_parallel_port_open_dev(GPIO_NAME);
 	if(gpio == NULL){
 		printf("Error opening GPIO\n");
-		return 0;
 	}
 	//Set all GPIO pins to be output
 	alt_up_parallel_port_set_all_bits_to_output(gpio);
